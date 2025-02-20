@@ -1,0 +1,113 @@
+import random
+import string
+from pathlib import Path
+
+def generate_boite_id():
+    """
+    Génère un identifiant unique pour un boîtier.
+    L'identifiant est composé de 4 chiffres aléatoires suivis d'une lettre majuscule.
+    Exemple : "1234A"
+    """
+    chiffres = ''.join(random.choices('0123456789', k=4))
+    lettre = random.choice(string.ascii_uppercase)
+    return chiffres + lettre
+
+def parametres_boitiers():
+    """
+    Paramétrer les boîtiers selon la séquence suivante :
+      1. Déterminer le nombre de boîtiers à configurer.
+      2. Générer automatiquement les IDs pour tous les boîtiers.
+      3. Pour chaque boîtier, demander le nombre de mesures d'intensité (I1, I2, ..., In).
+         Les mesures de tension U1, U2 et U3 sont attribuées par défaut.
+    
+    La configuration de chaque boîtier est stockée dans un dictionnaire.
+    """
+    configuration_boitiers = {}
+    
+    # Demander le nombre de boîtiers à paramétrer
+    n_boitiers = int(input("Entrez le nombre de boîtiers à paramétrer : "))
+    
+    # Générer automatiquement les IDs pour tous les boîtiers
+    boitiers_ids = [generate_boite_id() for _ in range(n_boitiers)]
+    
+    # Pour chaque boîtier, demander le nombre de mesures d'intensité
+    for i, boite_id in enumerate(boitiers_ids):
+        print(f"\nConfiguration pour le boîtier {i+1} (ID: {boite_id}) :")
+        n_intensite = int(input("  Entrez le nombre de mesures d'intensité à configurer : "))
+        
+        # Création de la liste des mesures d'intensité (I1, I2, ..., I{n_intensite})
+        liste_intensites = [f"I{j}" for j in range(1, n_intensite+1)]
+        # Attribution par défaut de 3 mesures de tension (U1, U2, U3)
+        liste_tensions = [f"U{k}" for k in range(1, 4)]
+        
+        configuration_boitiers[boite_id] = {
+            "nombre_intensites": n_intensite,
+            "intensites": liste_intensites,
+            "tensions": liste_tensions
+        }
+    
+    # Affichage récapitulatif de la configuration
+    print("\n=== Configuration des boîtiers ===")
+    for boite_id, config in configuration_boitiers.items():
+        print(f"\nBoîtier {boite_id} :")
+        print(" Mesures d'intensité : ", ", ".join(config["intensites"]))
+        print(" Mesures de tension  : ", ", ".join(config["tensions"]))
+    
+    return configuration_boitiers
+
+def create_directories(configuration_boitiers, base_dir_path):
+    """
+    Crée un dossier pour chaque boîtier dans le répertoire de base spécifié.
+    
+    Args:
+        configuration_boitiers (dict): La configuration des boîtiers avec leurs IDs.
+        base_dir_path (Path): L'objet Path du répertoire de base où les dossiers seront créés.
+    """
+    try:
+        base_dir_path.mkdir(parents=True, exist_ok=True)
+        print(f"Dossier de base vérifié/créé : {base_dir_path}")
+    except Exception as e:
+        print(f"Erreur lors de la création du dossier de base : {e}")
+        return
+    
+    for boite_id in configuration_boitiers.keys():
+        dossier_boite = base_dir_path / boite_id
+        try:
+            dossier_boite.mkdir(exist_ok=True)
+            print(f"Dossier créé pour le boîtier {boite_id} : {dossier_boite}")
+        except Exception as e:
+            print(f"Erreur lors de la création du dossier pour le boîtier {boite_id} : {e}")
+
+def create_measurement_files(configuration_boitiers, base_dir_path):
+    """
+    Pour chaque boîtier, crée un fichier texte 'mesures.txt' dans son dossier.
+    Ce fichier servira à enregistrer les mesures réalisées par le boîtier.
+    
+    Args:
+        configuration_boitiers (dict): La configuration des boîtiers avec leurs IDs.
+        base_dir_path (Path): Le chemin de base où les dossiers des boîtiers ont été créés.
+    """
+    for boite_id in configuration_boitiers.keys():
+        dossier_boite = base_dir_path / boite_id
+        fichier_mesures = dossier_boite / "mesures.txt"
+        try:
+            # Ouvre le fichier en mode écriture (créant le fichier s'il n'existe pas) et écrit un en-tête
+            with fichier_mesures.open(mode="w", encoding="utf-8") as f:
+                f.write(f"Mesures pour le boîtier {boite_id}\n")
+                f.write("===================================\n")
+            print(f"Fichier mesures créé pour le boîtier {boite_id} : {fichier_mesures}")
+        except Exception as e:
+            print(f"Erreur lors de la création du fichier mesures pour le boîtier {boite_id} : {e}")
+
+if __name__ == '__main__':
+    # Étape 1 : Paramétrer les boîtiers
+    configuration_boitiers = parametres_boitiers()
+    
+    # Étape 2 : Créer un dossier pour chaque boîtier dans le répertoire spécifié
+    base_dir = Path(r"C:\Users\chris\OneDrive\Bureau\Test_simulation_boitier")
+    create_directories(configuration_boitiers, base_dir)
+    
+    # Nouvelle étape : Dans chaque dossier de boîtier, créer un fichier texte pour enregistrer les mesures
+    create_measurement_files(configuration_boitiers, base_dir)
+
+
